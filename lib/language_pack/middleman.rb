@@ -33,7 +33,13 @@ class LanguagePack::Middleman < LanguagePack::Rack
   def middleman_build
     log("middleman_build") do
       topic("Building Middleman site")
-      run "bundle exec middleman build"
+      require 'benchmark'
+      time = Benchmark.realtime { pipe("env PATH=$PATH:bin bundle exec middleman build --debug 2>&1") }
+      if $?.success?
+        puts "Middleman build completed (#{"%.2f" % time}s)"
+      else
+        error "Middleman build failed."
+      end
     end
   end
 
