@@ -5,7 +5,27 @@ require "language_pack/rack"
 class LanguagePack::Middleman < LanguagePack::Rack
 
   def self.use?
-    File.exist?("Gemfile") && File.exist?("config.rb")
+    File.exist?("config.rb") && File.directory?('source')
+  end
+
+  def initialize(*args)
+    super *args
+    @has_gemfile = File.exist?("Gemfile")
+  end
+
+  # Hack: this is checked by build_bundler. If it's true, it discards
+  # Gemfile.lock and rebuilds the lockfile. We want to do that if there's no
+  # Gemfile, so let the build pretend that it needs a Gemfile.lock in that
+  # case.
+  def has_windows_gemfile_lock?
+    return true unless @has_gemfile
+    super
+  end
+
+  # Called when there is no Gemfile.
+  def create_implicit_gemfile
+    File.open('Gemfile', 'w') { |f| f.write default_gemfile_contents }
+    File.open('Gemfile.lock', 'w') { |f| f.write '' }
   end
 
   # Usually the default addons include the shared database, but in this case,
@@ -25,8 +45,9 @@ class LanguagePack::Middleman < LanguagePack::Rack
     setup_language_pack_environment
     allow_git do
       install_language_pack_gems
+      create_implicit_gemfile unless @has_gemfile
       build_bundler
-      create_config_ru
+      create_implicit_config_ru
       install_binaries
       middleman_build
     end
@@ -45,13 +66,21 @@ class LanguagePack::Middleman < LanguagePack::Rack
     end
   end
 
-  def create_config_ru
+  # This creates an implicit config.ru (Rackup) file in case the project didn't come with one.
+  def create_implicit_config_ru
     unless File.exist?('config.ru')
       log("create_config_ru") do
         topic("Creating default config.ru for Middleman")
         File.open('config.ru', 'w') { |f| f.write config_ru_contents }
       end
     end
+  end
+
+  def default_gemfile_contents
+    %[
+      source 'https://rubygems.org'
+      gem 'middleman'
+    ].strip.gsub(/^ {6}/, '')
   end
 
   def config_ru_contents
