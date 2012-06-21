@@ -44,9 +44,11 @@ class LanguagePack::Middleman < LanguagePack::Rack
   end
 
   def create_config_ru
-    log("create_config_ru") do
-      topic("Creating default config.ru for Middleman")
-      File.open('config.ru', 'w') { |f| f.write config_ru_contents }
+    unless File.exist?('config.ru')
+      log("create_config_ru") do
+        topic("Creating default config.ru for Middleman")
+        File.open('config.ru', 'w') { |f| f.write config_ru_contents }
+      end
     end
   end
 
