@@ -47,11 +47,11 @@ class LanguagePack::Middleman < LanguagePack::Rack
   def compile
     Dir.chdir(build_path)
     remove_vendor_bundle
+    create_implicit_gemfile unless @has_gemfile
     install_ruby
     setup_language_pack_environment
     allow_git do
       install_language_pack_gems
-      create_implicit_gemfile unless @has_gemfile
       build_bundler
       create_implicit_config_ru
       install_binaries
