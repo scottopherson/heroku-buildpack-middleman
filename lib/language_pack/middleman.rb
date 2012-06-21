@@ -8,6 +8,8 @@ class LanguagePack::Middleman < LanguagePack::Rack
     File.exist?("Gemfile") && File.exist?("config.rb")
   end
 
+  # Usually the default addons include the shared database, but in this case,
+  # we don't need any addons by default.
   def default_addons
     []
   end
@@ -24,9 +26,9 @@ class LanguagePack::Middleman < LanguagePack::Rack
     allow_git do
       install_language_pack_gems
       build_bundler
-      middleman_build
       create_config_ru
       install_binaries
+      middleman_build
     end
   end
 
