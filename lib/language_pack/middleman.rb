@@ -26,6 +26,10 @@ class LanguagePack::Middleman < LanguagePack::Rack
 
   # Called when there is no Gemfile.
   def create_implicit_gemfile
+    topic("Warning: No Gemfile was found")
+    puts "Your project will be running Middleman 2. To use version 3+,"
+    puts "make sure that your project has a Gemfile."
+
     File.open('Gemfile', 'w') { |f| f.write default_gemfile_contents }
     File.open('Gemfile.lock', 'w') { |f| f.write '' }
   end
@@ -81,7 +85,7 @@ class LanguagePack::Middleman < LanguagePack::Rack
   def default_gemfile_contents
     %[
       source 'https://rubygems.org'
-      gem 'middleman'
+      gem 'middleman', '~> 2.0'
     ].strip.gsub(/^ {6}/, '')
   end
 
