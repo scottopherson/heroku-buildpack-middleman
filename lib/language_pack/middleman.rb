@@ -4,6 +4,8 @@ require "language_pack/rack"
 
 class LanguagePack::Middleman < LanguagePack::Rack
 
+  PREBUILD_COMMAND = "middleman build"
+
   def self.use?
     File.exist?("config.rb") && File.directory?('source')
   end
@@ -55,13 +57,13 @@ class LanguagePack::Middleman < LanguagePack::Rack
 
   def middleman_build
     log("middleman_build") do
-      topic("Building Middleman site")
+      topic("Building #{name} site")
       require 'benchmark'
-      time = Benchmark.realtime { pipe("env PATH=$PATH:bin bundle exec middleman build --debug 2>&1") }
+      time = Benchmark.realtime { pipe("env PATH=$PATH:bin bundle exec #{PREBUILD_COMMAND} --debug 2>&1") }
       if $?.success?
-        puts "Middleman build completed (#{"%.2f" % time}s)"
+        puts "#{name} build completed (#{"%.2f" % time}s)"
       else
-        error "Middleman build failed."
+        error "#{name} build failed."
       end
     end
   end
