@@ -1,3 +1,14 @@
+Heroku Ruby buildpack with Middleman support [FORK]
+===================================================
+
+This version has been forked to add explicit support for
+[Middleman](http://www.middlemanapp.com). This allows you to push your MM app to 
+Heroku and have it automatically build the files and serve them.
+
+    $ heroku create --stack cedar --buildpack http://github.com/rstacruz/heroku-buildpack-middleman.git
+
+Ensure your Middleman project has a Gemfile & Gemfile.lock!
+
 Heroku buildpack: Ruby
 ======================
 
