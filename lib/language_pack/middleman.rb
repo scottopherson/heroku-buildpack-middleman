@@ -4,8 +4,6 @@ require "language_pack/rack"
 
 class LanguagePack::Middleman < LanguagePack::Rack
 
-  PREBUILD_COMMAND = "middleman build"
-
   def self.use?
     File.exist?("config.rb") && File.directory?('source')
   end
@@ -13,6 +11,20 @@ class LanguagePack::Middleman < LanguagePack::Rack
   def initialize(*args)
     super *args
     @has_gemfile = File.exist?("Gemfile")
+  end
+
+  # The command to be ran to build the static files.
+  def build_files_command
+    "middleman build"
+  end
+
+  # Where the files are expected.
+  def output_path
+    "build"
+  end
+
+  def name
+    "Middleman"
   end
 
   # Hack: this is checked by build_bundler. If it's true, it discards
@@ -26,22 +38,21 @@ class LanguagePack::Middleman < LanguagePack::Rack
 
   # Called when there is no Gemfile.
   def create_implicit_gemfile
+    no_gemfile_warning
+    File.open('Gemfile', 'w') { |f| f.write default_gemfile_contents }
+    File.open('Gemfile.lock', 'w') { |f| f.write '' }
+  end
+
+  def no_gemfile_warning
     topic("Warning: No Gemfile was found")
     puts "Your project will be running Middleman 2. To use version 3+,"
     puts "make sure that your project has a Gemfile."
-
-    File.open('Gemfile', 'w') { |f| f.write default_gemfile_contents }
-    File.open('Gemfile.lock', 'w') { |f| f.write '' }
   end
 
   # Usually the default addons include the shared database, but in this case,
   # we don't need any addons by default.
   def default_addons
     []
-  end
-
-  def name
-    "Middleman"
   end
 
   def compile
@@ -55,15 +66,15 @@ class LanguagePack::Middleman < LanguagePack::Rack
       build_bundler
       create_implicit_config_ru
       install_binaries
-      middleman_build
+      build_static_files
     end
   end
 
-  def middleman_build
-    log("middleman_build") do
+  def build_static_files
+    log("build_static_files") do
       topic("Building #{name} site")
       require 'benchmark'
-      time = Benchmark.realtime { pipe("env PATH=$PATH:bin bundle exec #{PREBUILD_COMMAND} --debug 2>&1") }
+      time = Benchmark.realtime { pipe("env PATH=$PATH:bin bundle exec #{build_files_command} --debug 2>&1") }
       if $?.success?
         puts "#{name} build completed (#{"%.2f" % time}s)"
       else
@@ -76,7 +87,7 @@ class LanguagePack::Middleman < LanguagePack::Rack
   def create_implicit_config_ru
     unless File.exist?('config.ru')
       log("create_config_ru") do
-        topic("Creating default config.ru for Middleman")
+        topic("Creating default config.ru for #{name}")
         File.open('config.ru', 'w') { |f| f.write config_ru_contents }
       end
     end
@@ -94,10 +105,10 @@ class LanguagePack::Middleman < LanguagePack::Rack
       # Modified version of TryStatic, from rack-contrib
       # https://github.com/rack/rack-contrib/blob/master/lib/rack/contrib/try_static.rb
 
-      # Serve static files under a `build` directory:
-      # - `/` will try to serve your `build/index.html` file
-      # - `/foo` will try to serve `build/foo` or `build/foo.html` in that order
-      # - missing files will try to serve build/404.html or a tiny default 404 page
+      # Serve static files under a `#{output_path}` directory:
+      # - `/` will try to serve your `#{output_path}/index.html` file
+      # - `/foo` will try to serve `#{output_path}/foo` or `#{output_path}/foo.html` in that order
+      # - missing files will try to serve #{output_path}/404.html or a tiny default 404 page
 
 
       module Rack
@@ -122,11 +133,11 @@ class LanguagePack::Middleman < LanguagePack::Rack
         end
       end
 
-      use Rack::TryStatic, :root => "build", :urls => %w[/], :try => ['.html', 'index.html', '/index.html']
+      use Rack::TryStatic, :root => "#{output_path}", :urls => %w[/], :try => ['.html', 'index.html', '/index.html']
 
       # Run your own Rack app here or use this one to serve 404 messages:
       run lambda{ |env|
-        not_found_page = File.expand_path("../build/404.html", __FILE__)
+        not_found_page = File.expand_path("../#{output_path}/404.html", __FILE__)
         if File.exist?(not_found_page)
           [ 404, { 'Content-Type'  => 'text/html'}, [File.read(not_found_page)] ]
         else
