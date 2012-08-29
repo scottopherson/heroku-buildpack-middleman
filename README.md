@@ -7,10 +7,10 @@ Heroku and have it automatically build the files and serve them.
 
 ``` sh
 # To create a new app:
-$ heroku create --stack cedar --buildpack http://github.com/rstacruz/heroku-buildpack-middleman.git
+$ heroku create --stack cedar --buildpack http://github.com/Scottopherson/heroku-buildpack-middleman.git
 
 # ...or to migrate an existing Cedar app to it:
-$ heroku config:add BUILDPACK_URL=http://github.com/rstacruz/heroku-buildpack-middleman.git
+$ heroku config:add BUILDPACK_URL=http://github.com/Scottopherson/heroku-buildpack-middleman.git
 ```
 
 Unlike other buildpacks, this removes the need to modify your Middleman app! You
